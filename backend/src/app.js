@@ -9,6 +9,8 @@ app.use(cookieParser())
 app.use('/api/auth', authRoute)
 
 
-
+app.post('/', function(req , res){
+    res.send('server is working')
+})
 
 export default app;

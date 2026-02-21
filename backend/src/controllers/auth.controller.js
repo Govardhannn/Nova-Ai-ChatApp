@@ -2,7 +2,7 @@ import userModel from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-export const register = async () => {
+export const register = async (req, res) => {
   const {
     fullName: { firstName, lastName },
     email,
@@ -40,3 +40,36 @@ export const register = async () => {
   });
 };
 
+export const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await userModel.findOne({
+      email,
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    res.cookie("token", token);
+
+    res.status(200).json({
+      message: "user logged in successfully",
+      user: {
+        email: user.email,
+        _id: user._id,
+        fullName: user.fullName,
+      },
+    });
+  } catch (error) {
+    console.log("internal server error", error)
+  }
+};
