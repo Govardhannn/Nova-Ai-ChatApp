@@ -12,7 +12,8 @@ const port = process.env.PORT || 8888;
 // add here Socket.io for real time connection
 
 const connString = async () => {
-  connDB();
+ await connDB();
+   initSocketServer(httpServer)
 
   httpServer.listen(port, () => {
     console.log(`server is running on this ${port} port`);
