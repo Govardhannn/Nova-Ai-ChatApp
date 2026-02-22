@@ -3,6 +3,7 @@ import cookie from "cookie";
 import jwt from "jsonwebtoken";
 import userModel from "../models/user.model.js";
 import generateContent from "../services/ai.service.js";
+import messageModel from "../models/message.model.js";
 
 export const initSocketServer = (httpServer) => {
   const io = new Server(httpServer, {
@@ -38,25 +39,38 @@ export const initSocketServer = (httpServer) => {
 
   // 🤖 AI Socket
   io.on("connection", (socket) => {
-   
+    socket.on("ai-message", async (messagePayload) => {
+      console.log("Received message:", messagePayload);
 
-  socket.on("ai-message", async (messagePayload) => {
-  console.log("Received message:", messagePayload);
+      try {
+        const response = await generateContent(messagePayload.content);
 
-  try {
-    const response = await generateContent(messagePayload.content);
+        // saving the content or message by user
+        await messageModel.create({
+          chat: messagePayload.chat,
+          user: socket.use._id,
+          content: messagePayload.content,
+          role: "user",
+        });
+        console.log("Gemini Response:", response);
 
-    console.log("Gemini Response:", response);
+        // both message daving in db
+        await messageModel.create({
+          chat: messagePayload.chat,
+          user: socket.use._id,
+          content: response,
+          role: "model",
+        });
 
-  io.emit("ai-response", {
-  content: response,
-  chat: messagePayload.chat,
-});
-  } catch (error) {
-    console.error("AI Error:", error);
-    socket.emit("ai-error", { message: "AI failed" });
-  }
-});
+        io.emit("ai-response", {
+          content: response,
+          chat: messagePayload.chat,
+        });
+      } catch (error) {
+        console.error("AI Error:", error);
+        socket.emit("ai-error", { message: "AI failed" });
+      }
+    });
 
     socket.on("disconnect", () => {
       console.log("User Disconnected:", socket.id);
