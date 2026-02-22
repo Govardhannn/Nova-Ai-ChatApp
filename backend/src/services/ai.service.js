@@ -1,20 +1,29 @@
 import dotenv from "dotenv";
-dotenv.config(); 
+dotenv.config();
 
 import { GoogleGenAI } from "@google/genai";
-
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-async function generateResponse(content) {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
-    contents: content,
-  });
+async function generateContent(message) {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: message }],
+        },
+      ],
+    });
 
-  return response.content; // ✅ return text
+    return response.text;
+  } catch (error) {
+    console.error("Gemini API Error:", error.message);
+    throw new Error("AI generation failed");
+  }
 }
 
-export default generateResponse;
+export default generateContent;
