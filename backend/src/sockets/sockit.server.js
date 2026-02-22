@@ -2,6 +2,9 @@ import { Server } from "socket.io";
 import cookie from "cookie";
 import jwt from "jsonwebtoken";
 import userModel from "../models/user.model.js";
+import aiService from "../services/ai.service.js";
+
+
 
 export const initSocketServer = (httpServer) => {
   const io = new Server(httpServer, {});
@@ -31,8 +34,20 @@ export const initSocketServer = (httpServer) => {
   });
 
   io.on("connection", (socket) => {
-    console.log("User connected:", socket.user);
-    console.log("Socket ID:", socket.id);
+    socket.on("ai-message", async (messagePayload) => {
+     console.log("messagePayload :" , messagePayload)   
+   
+        console.log(messagePayload);
+        const response = await aiService(messagePayload.content);
+
+        socket.emit("ai-response", {
+          content: response,
+          chat: messagePayload.chat,
+        });
+    
+        
+     
+    });
   });
 };
 
